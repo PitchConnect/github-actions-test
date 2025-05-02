@@ -17,8 +17,8 @@ This document outlines the test plan for verifying the GitHub Actions workflows 
 
 | Test Case | Steps | Expected Result | Actual Result | Status |
 |-----------|-------|-----------------|---------------|--------|
-| Issue without reference | Create issue without mentioning CONTRIBUTING.md | Comment added with reminder | Workflow failed to run | Failed |
-| Issue with reference | Create issue mentioning CONTRIBUTING.md | No comment added | Workflow failed to run | Failed |
+| Issue without reference | Create issue without mentioning CONTRIBUTING.md | Comment added with reminder | Workflow not triggered for issues | Failed |
+| Issue with reference | Create issue mentioning CONTRIBUTING.md | No comment added | Workflow not triggered for issues | Failed |
 | PR without reference | Create PR without mentioning CONTRIBUTING.md | Comment added with reminder | | Not Started |
 | PR with reference | Create PR mentioning CONTRIBUTING.md | No comment added | | Not Started |
 
@@ -32,9 +32,10 @@ This document outlines the test plan for verifying the GitHub Actions workflows 
 
 | Challenge | Solution | Notes |
 |-----------|----------|-------|
-| GitHub Actions failing to run | Need to check workflow permissions | The workflows are failing with "This run likely failed because of a workflow file issue" |
-| GitHub Actions not triggering on issues | Need to verify event triggers | The workflows don't seem to be triggering on issue creation/editing |
-| Repository permissions | Need to check if GitHub Actions are enabled | May need to adjust repository settings |
+| GitHub Actions failing to run | Added explicit permissions to workflow files | Workflows still failing with "This run likely failed because of a workflow file issue" |
+| GitHub Actions not triggering on issues | Added debug logging to workflow files | No runs found for issue events, suggesting the workflow isn't being triggered |
+| Repository permissions | Need to check if GitHub Actions are enabled for issues | May need to adjust repository settings or check GitHub documentation |
+| Workflow file syntax | Need to verify the workflow file syntax | May need to check GitHub Actions documentation for correct syntax |
 
 ## Permissions and Configuration
 
@@ -42,10 +43,16 @@ This document outlines the test plan for verifying the GitHub Actions workflows 
 - [ ] Verify the workflows have the necessary permissions
 - [ ] Verify the workflows are triggered correctly
 
-## Updated Workflow Files
+## Lessons Learned
 
-Based on our testing, we need to make the following changes to the workflow files:
+1. **GitHub Actions Permissions**: Explicit permissions are required for GitHub Actions to interact with issues and PRs.
+2. **Event Triggers**: Not all events may be enabled by default for GitHub Actions.
+3. **Debugging Challenges**: It can be difficult to debug GitHub Actions without proper logging.
+4. **Repository Settings**: Repository settings may need to be adjusted to enable certain GitHub Actions features.
 
-1. Add explicit permissions to the workflow files
-2. Ensure the event triggers are correctly configured
-3. Add more detailed logging for debugging purposes
+## Next Steps
+
+1. Check GitHub documentation for any restrictions on issue event triggers
+2. Verify repository settings for GitHub Actions
+3. Consider creating a simpler test workflow to verify basic functionality
+4. Test PR-related workflows since they might have different permissions
