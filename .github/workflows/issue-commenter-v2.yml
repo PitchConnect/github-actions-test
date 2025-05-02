@@ -1,0 +1,41 @@
+name: Issue Commenter V2
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  add-comment:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Add welcome comment
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const payload = context.payload;
+            const issueNumber = payload.issue.number;
+            
+            console.log(`Adding welcome comment to issue #${issueNumber}`);
+            
+            const commentBody = `
+## Welcome!
+
+Thank you for opening this issue! Our team will review it soon.
+
+Please make sure you've checked our contribution guidelines.
+            `;
+            
+            try {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: commentBody
+              });
+              console.log(`Successfully added welcome comment to issue #${issueNumber}`);
+            } catch (error) {
+              console.error(`Error adding comment to issue #${issueNumber}: ${error.message}`);
+            }

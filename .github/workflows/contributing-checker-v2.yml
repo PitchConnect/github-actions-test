@@ -1,0 +1,55 @@
+name: Contributing Checker V2
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  check-contributing-reference:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Check for CONTRIBUTING.md reference
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const payload = context.payload;
+            const issueNumber = payload.issue.number;
+            const issueBody = payload.issue.body || '';
+            
+            console.log(`Checking issue #${issueNumber} for CONTRIBUTING.md reference`);
+            
+            const hasContributingReference = 
+              issueBody.includes('CONTRIBUTING.md') || 
+              issueBody.includes('contribution guidelines') ||
+              issueBody.includes('contributing guidelines');
+            
+            console.log(`Issue body contains CONTRIBUTING.md reference: ${hasContributingReference}`);
+            
+            if (!hasContributingReference) {
+              console.log(`No CONTRIBUTING.md reference found in issue #${issueNumber}`);
+              
+              const commentBody = `
+## Contribution Guidelines Reminder
+
+Please take a moment to review our [CONTRIBUTING.md](https://github.com/PitchConnect/contribution-guidelines/blob/main/CONTRIBUTING.md) file.
+
+Thank you!
+              `;
+              
+              try {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  body: commentBody
+                });
+                console.log(`Added CONTRIBUTING.md reminder comment to issue #${issueNumber}`);
+              } catch (error) {
+                console.error(`Error adding comment to issue #${issueNumber}: ${error.message}`);
+              }
+            } else {
+              console.log(`CONTRIBUTING.md reference found in issue #${issueNumber}`);
+            }
