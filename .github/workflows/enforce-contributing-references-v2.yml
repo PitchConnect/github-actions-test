@@ -1,0 +1,102 @@
+name: Enforce CONTRIBUTING.md References V2
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited]
+
+# Add explicit permissions
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  check-contributing-reference:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug Info
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event action: ${{ github.event.action }}"
+          echo "Repository: ${{ github.repository }}"
+          
+      - name: Check for CONTRIBUTING.md reference
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            
+            console.log(`Repository: ${owner}/${repo}`);
+            console.log(`Event: ${context.eventName}`);
+            console.log(`Action: ${context.payload.action}`);
+            
+            // Determine if this is an issue or PR
+            const isIssue = !!context.payload.issue;
+            const item = isIssue ? context.payload.issue : context.payload.pull_request;
+            const itemType = isIssue ? 'issue' : 'pull request';
+            const itemNumber = item.number;
+            
+            console.log(`Checking ${itemType} #${itemNumber} for CONTRIBUTING.md reference`);
+            
+            // Check if the body contains a reference to CONTRIBUTING.md
+            const body = item.body || '';
+            const hasContributingReference = 
+              body.includes('CONTRIBUTING.md') || 
+              body.includes('contribution guidelines') ||
+              body.includes('contributing guidelines');
+            
+            console.log(`Body contains CONTRIBUTING.md reference: ${hasContributingReference}`);
+            
+            if (!hasContributingReference) {
+              console.log(`No CONTRIBUTING.md reference found in ${itemType} #${itemNumber}`);
+              
+              // Create a comment with a reminder
+              const commentBody = `
+## Contribution Guidelines Reminder
+
+Thank you for your ${itemType}! 
+
+It appears that you haven't referenced our contribution guidelines. Please take a moment to review our [CONTRIBUTING.md](https://github.com/PitchConnect/contribution-guidelines/blob/main/CONTRIBUTING.md) file, which contains important information about:
+
+- Our development workflow
+- Coding standards
+- Pull request process
+- Issue lifecycle
+
+### For AI Assistants
+
+If you're an AI assistant, please note that:
+- You should always check all comments on issues and PRs, not just the initial description
+- Use GitHub CLI (gh) for GitHub operations when applicable
+- Follow our GitFlow branching model
+- Use pre-commit hooks to catch issues early
+
+Please update your ${itemType} to indicate that you've reviewed the contribution guidelines.
+`;
+              
+              try {
+                if (isIssue) {
+                  await github.rest.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: itemNumber,
+                    body: commentBody
+                  });
+                } else {
+                  await github.rest.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: itemNumber,
+                    body: commentBody
+                  });
+                }
+                console.log(`Added CONTRIBUTING.md reminder comment to ${itemType} #${itemNumber}`);
+              } catch (error) {
+                console.error(`Error adding comment to ${itemType} #${itemNumber}: ${error.message}`);
+              }
+            } else {
+              console.log(`CONTRIBUTING.md reference found in ${itemType} #${itemNumber}`);
+            }
