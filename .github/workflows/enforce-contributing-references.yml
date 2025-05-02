@@ -6,16 +6,32 @@ on:
   pull_request:
     types: [opened, edited]
 
+# Add explicit permissions
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
 jobs:
   check-contributing-reference:
     runs-on: ubuntu-latest
     steps:
+      - name: Debug Info
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event action: ${{ github.event.action }}"
+          echo "Repository: ${{ github.repository }}"
+          
       - name: Check for CONTRIBUTING.md reference
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { owner, repo } = context.repo;
+            
+            console.log(`Repository: ${owner}/${repo}`);
+            console.log(`Event: ${context.eventName}`);
+            console.log(`Action: ${context.payload.action}`);
             
             // Determine if this is an issue or PR
             const isIssue = !!context.payload.issue;
@@ -31,6 +47,8 @@ jobs:
               body.includes('CONTRIBUTING.md') || 
               body.includes('contribution guidelines') ||
               body.includes('contributing guidelines');
+            
+            console.log(`Body contains CONTRIBUTING.md reference: ${hasContributingReference}`);
             
             if (!hasContributingReference) {
               console.log(`No CONTRIBUTING.md reference found in ${itemType} #${itemNumber}`);

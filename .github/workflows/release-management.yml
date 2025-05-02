@@ -7,10 +7,22 @@ on:
         description: 'Release version (e.g., 1.2.0)'
         required: true
 
+# Add explicit permissions
+permissions:
+  issues: write
+  pull-requests: write
+  contents: write
+
 jobs:
   create-release-pr:
     runs-on: ubuntu-latest
     steps:
+      - name: Debug Info
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Version: ${{ github.event.inputs.version }}"
+          
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -31,6 +43,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { owner, repo } = context.repo;
+            
+            console.log(`Repository: ${owner}/${repo}`);
+            console.log(`Event: ${context.eventName}`);
             
             // Define required labels with their colors and descriptions
             const requiredLabels = [

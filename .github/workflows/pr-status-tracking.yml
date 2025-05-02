@@ -4,10 +4,22 @@ on:
   pull_request:
     types: [opened, converted_to_draft, ready_for_review, closed]
 
+# Add explicit permissions
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
 jobs:
   track-issues:
     runs-on: ubuntu-latest
     steps:
+      - name: Debug Info
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event action: ${{ github.event.action }}"
+          echo "Repository: ${{ github.repository }}"
+          
       - name: Track Issue Status
         uses: actions/github-script@v6
         with:
@@ -16,6 +28,9 @@ jobs:
             const { owner, repo } = context.repo;
             const pr = context.payload.pull_request;
             
+            console.log(`Repository: ${owner}/${repo}`);
+            console.log(`Event: ${context.eventName}`);
+            console.log(`Action: ${context.payload.action}`);
             console.log(`Processing PR #${pr.number}: ${pr.title}`);
             
             // Define required labels with their colors and descriptions
