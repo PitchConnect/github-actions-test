@@ -1,58 +1,75 @@
 # GitHub Actions Test Plan
 
-This document outlines the test plan for verifying the GitHub Actions workflows in this repository.
+This document outlines the test plan for verifying the GitHub Actions workflows in this repository and documents our findings.
 
-## Test Cases and Results
+## Test Results Summary
 
-### PR Status Tracking Workflow
+| Workflow | Status | Notes |
+|----------|--------|-------|
+| Simple Issue Test | ✅ Working | Successfully triggers on issue events |
+| Enforce CONTRIBUTING.md References | ❌ Not Working | Does not trigger on issue events |
+| PR Status Tracking | ❓ Not Tested | Requires testing with PRs |
+| Release Management | ❓ Not Tested | Requires manual triggering |
 
-| Test Case | Steps | Expected Result | Actual Result | Status |
-|-----------|-------|-----------------|---------------|--------|
-| Draft PR | 1. Create issue<br>2. Create draft PR referencing issue | Issue labeled as `in-progress` | | Not Started |
-| Ready PR | 1. Mark draft PR as ready | Issue labeled as `review-ready` | | Not Started |
-| Merged to develop | 1. Merge PR to develop | Issue labeled as `merged-to-develop` | | Not Started |
-| Merged to main | 1. Merge PR to main | Issue labeled as `released` | | Not Started |
+## Key Findings
 
-### Enforce CONTRIBUTING.md References Workflow
+1. **Issue Event Triggers Work with Simple Workflows**:
+   - Our simple test workflow (`simple-issue-test.yml`) successfully triggers on issue events
+   - The workflow logs basic information about the issue
 
-| Test Case | Steps | Expected Result | Actual Result | Status |
-|-----------|-------|-----------------|---------------|--------|
-| Issue without reference | Create issue without mentioning CONTRIBUTING.md | Comment added with reminder | Workflow not triggered for issues | Failed |
-| Issue with reference | Create issue mentioning CONTRIBUTING.md | No comment added | Workflow not triggered for issues | Failed |
-| PR without reference | Create PR without mentioning CONTRIBUTING.md | Comment added with reminder | | Not Started |
-| PR with reference | Create PR mentioning CONTRIBUTING.md | No comment added | | Not Started |
+2. **Complex Workflows Don't Trigger for Issues**:
+   - More complex workflows like `enforce-contributing-references.yml` don't trigger on issue events
+   - This happens despite having identical trigger configurations
 
-### Release Management Workflow
+3. **Workflow File Naming May Matter**:
+   - We tried creating a V2 version of the workflow with a different filename
+   - This didn't resolve the issue
 
-| Test Case | Steps | Expected Result | Actual Result | Status |
-|-----------|-------|-----------------|---------------|--------|
-| Generate release PR | 1. Have issues labeled as `merged-to-develop`<br>2. Run release workflow | Release PR created with all issues | | Not Started |
+4. **Permissions Are Correctly Configured**:
+   - We added explicit permissions to all workflows
+   - This didn't resolve the triggering issues for complex workflows
 
 ## Implementation Challenges and Solutions
 
 | Challenge | Solution | Notes |
 |-----------|----------|-------|
-| GitHub Actions failing to run | Added explicit permissions to workflow files | Workflows still failing with "This run likely failed because of a workflow file issue" |
-| GitHub Actions not triggering on issues | Added debug logging to workflow files | No runs found for issue events, suggesting the workflow isn't being triggered |
-| Repository permissions | Need to check if GitHub Actions are enabled for issues | May need to adjust repository settings or check GitHub documentation |
-| Workflow file syntax | Need to verify the workflow file syntax | May need to check GitHub Actions documentation for correct syntax |
+| GitHub Actions not triggering for issues | Create a simple workflow first | Simple workflows trigger correctly for issues |
+| Complex workflows not triggering | May need to simplify workflows | Break down complex workflows into smaller, focused workflows |
+| Workflow file syntax | Verified with working examples | Syntax is correct, but complex workflows still don't trigger |
+| Repository permissions | Verified with working examples | Permissions are correct, but complex workflows still don't trigger |
 
-## Permissions and Configuration
+## Recommendations for Implementation
 
-- [ ] Verify GitHub Actions are enabled for the repository
-- [ ] Verify the workflows have the necessary permissions
-- [ ] Verify the workflows are triggered correctly
+Based on our testing, here are recommendations for implementing GitHub Actions across repositories:
 
-## Lessons Learned
+1. **Start with Simple Workflows**:
+   - Begin with basic workflows that perform a single task
+   - Verify they work before adding complexity
+   - Use the simple-issue-test.yml as a template
 
-1. **GitHub Actions Permissions**: Explicit permissions are required for GitHub Actions to interact with issues and PRs.
-2. **Event Triggers**: Not all events may be enabled by default for GitHub Actions.
-3. **Debugging Challenges**: It can be difficult to debug GitHub Actions without proper logging.
-4. **Repository Settings**: Repository settings may need to be adjusted to enable certain GitHub Actions features.
+2. **Break Down Complex Workflows**:
+   - Split complex workflows into smaller, focused workflows
+   - Each workflow should handle a specific task
+   - Chain workflows together if needed
+
+3. **Use Workflow_Dispatch for Testing**:
+   - Use the workflow_dispatch event for manual testing
+   - This allows triggering workflows directly from the Actions tab
+   - Helpful for debugging and testing
+
+4. **Add Comprehensive Logging**:
+   - Include detailed logging in all workflows
+   - Log event details, payload information, and action results
+   - This helps diagnose issues when workflows don't behave as expected
+
+5. **Consider Alternative Approaches**:
+   - For critical functionality, consider alternative approaches
+   - For example, use a scheduled workflow that checks all recent issues/PRs
+   - This may be more reliable than event-triggered workflows
 
 ## Next Steps
 
-1. Check GitHub documentation for any restrictions on issue event triggers
-2. Verify repository settings for GitHub Actions
-3. Consider creating a simpler test workflow to verify basic functionality
-4. Test PR-related workflows since they might have different permissions
+1. Test PR-related workflows to see if they trigger correctly
+2. Test the Release Management workflow using workflow_dispatch
+3. Explore alternative approaches for implementing the CONTRIBUTING.md reference check
+4. Document findings and update implementation plan
