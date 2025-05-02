@@ -1,0 +1,23 @@
+name: Minimal Commenter
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  add-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add simple comment
+        run: |
+          echo "Adding comment to issue ${{ github.event.issue.number }}"
+          
+          # Use curl to add a comment
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments \
+            -d '{"body":"This is a test comment from the minimal-commenter workflow."}'
