@@ -1,0 +1,76 @@
+name: Label Creator
+
+on:
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  create-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create standard labels
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            
+            const labels = [
+              {
+                name: 'triage',
+                color: 'fbca04',
+                description: 'Needs triage by maintainers'
+              },
+              {
+                name: 'work-in-progress',
+                color: '0052cc',
+                description: 'Issue is being worked on in a draft PR'
+              },
+              {
+                name: 'ready-for-review',
+                color: '5319e7',
+                description: 'Work is complete and ready for review'
+              },
+              {
+                name: 'merged-to-develop',
+                color: '0e8a16',
+                description: 'Implementation has been merged to develop'
+              },
+              {
+                name: 'released',
+                color: '1d76db',
+                description: 'Feature has been released to production'
+              }
+            ];
+            
+            for (const label of labels) {
+              try {
+                // Try to get the label
+                await github.rest.issues.getLabel({
+                  owner,
+                  repo,
+                  name: label.name
+                });
+                console.log(`Label ${label.name} already exists`);
+              } catch (error) {
+                if (error.status === 404) {
+                  // Label doesn't exist, create it
+                  try {
+                    await github.rest.issues.createLabel({
+                      owner,
+                      repo,
+                      name: label.name,
+                      color: label.color,
+                      description: label.description
+                    });
+                    console.log(`Created label ${label.name}`);
+                  } catch (createError) {
+                    console.error(`Error creating label ${label.name}: ${createError.message}`);
+                  }
+                } else {
+                  console.error(`Error checking label ${label.name}: ${error.message}`);
+                }
+              }
+            }

@@ -1,0 +1,63 @@
+name: PR Contributing Guidelines Checker
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  check-contributing-reference:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug Info
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event action: ${{ github.event.action }}"
+          echo "PR number: ${{ github.event.pull_request.number }}"
+          echo "PR title: ${{ github.event.pull_request.title }}"
+      
+      - name: Check for CONTRIBUTING.md reference
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+            const prBody = context.payload.pull_request.body || '';
+            
+            console.log(`Checking PR #${prNumber} for CONTRIBUTING.md reference`);
+            
+            const hasContributingReference = 
+              prBody.includes('CONTRIBUTING.md') || 
+              prBody.includes('contribution guidelines') ||
+              prBody.includes('contributing guidelines');
+            
+            console.log(`PR body contains CONTRIBUTING.md reference: ${hasContributingReference}`);
+            
+            if (!hasContributingReference) {
+              console.log(`No CONTRIBUTING.md reference found in PR #${prNumber}`);
+              
+              const commentBody = `
+## Contribution Guidelines Reminder
+
+Please take a moment to review our [CONTRIBUTING.md](https://github.com/PitchConnect/contribution-guidelines/blob/main/CONTRIBUTING.md) file.
+
+Thank you!
+              `;
+              
+              try {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  body: commentBody
+                });
+                console.log(`Added CONTRIBUTING.md reminder comment to PR #${prNumber}`);
+              } catch (error) {
+                console.error(`Error adding comment to PR #${prNumber}: ${error.message}`);
+              }
+            } else {
+              console.log(`CONTRIBUTING.md reference found in PR #${prNumber}`);
+            }

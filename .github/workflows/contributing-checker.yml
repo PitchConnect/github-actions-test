@@ -1,0 +1,63 @@
+name: Contributing Guidelines Checker
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  check-contributing-reference:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug Info
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event action: ${{ github.event.action }}"
+          echo "Issue number: ${{ github.event.issue.number }}"
+          echo "Issue title: ${{ github.event.issue.title }}"
+      
+      - name: Check for CONTRIBUTING.md reference
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issueNumber = context.payload.issue.number;
+            const issueBody = context.payload.issue.body || '';
+            
+            console.log(`Checking issue #${issueNumber} for CONTRIBUTING.md reference`);
+            
+            const hasContributingReference = 
+              issueBody.includes('CONTRIBUTING.md') || 
+              issueBody.includes('contribution guidelines') ||
+              issueBody.includes('contributing guidelines');
+            
+            console.log(`Issue body contains CONTRIBUTING.md reference: ${hasContributingReference}`);
+            
+            if (!hasContributingReference) {
+              console.log(`No CONTRIBUTING.md reference found in issue #${issueNumber}`);
+              
+              const commentBody = `
+## Contribution Guidelines Reminder
+
+Please take a moment to review our [CONTRIBUTING.md](https://github.com/PitchConnect/contribution-guidelines/blob/main/CONTRIBUTING.md) file.
+
+Thank you!
+              `;
+              
+              try {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issueNumber,
+                  body: commentBody
+                });
+                console.log(`Added CONTRIBUTING.md reminder comment to issue #${issueNumber}`);
+              } catch (error) {
+                console.error(`Error adding comment to issue #${issueNumber}: ${error.message}`);
+              }
+            } else {
+              console.log(`CONTRIBUTING.md reference found in issue #${issueNumber}`);
+            }

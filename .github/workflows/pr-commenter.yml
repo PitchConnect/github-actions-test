@@ -1,0 +1,49 @@
+name: PR Commenter
+
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  add-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug Info
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event action: ${{ github.event.action }}"
+          echo "PR number: ${{ github.event.pull_request.number }}"
+          echo "PR title: ${{ github.event.pull_request.title }}"
+      
+      - name: Add welcome comment
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+            
+            console.log(`Adding welcome comment to PR #${prNumber}`);
+            
+            const commentBody = `
+## Thank you for your contribution!
+
+Our team will review your PR soon.
+
+Please make sure you've checked our contribution guidelines.
+            `;
+            
+            try {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body: commentBody
+              });
+              console.log(`Successfully added welcome comment to PR #${prNumber}`);
+            } catch (error) {
+              console.error(`Error adding comment to PR #${prNumber}: ${error.message}`);
+            }

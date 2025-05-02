@@ -1,0 +1,51 @@
+name: PR Labeler
+
+on:
+  pull_request:
+    types: [opened, converted_to_draft, ready_for_review]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  label-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug Info
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event action: ${{ github.event.action }}"
+          echo "PR number: ${{ github.event.pull_request.number }}"
+          echo "PR title: ${{ github.event.pull_request.title }}"
+          echo "PR is draft: ${{ github.event.pull_request.draft }}"
+      
+      - name: Add label based on PR state
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+            const prNumber = pr.number;
+            
+            let labelToAdd = '';
+            
+            if (pr.draft) {
+              labelToAdd = 'work-in-progress';
+              console.log(`PR #${prNumber} is a draft, adding work-in-progress label`);
+            } else {
+              labelToAdd = 'ready-for-review';
+              console.log(`PR #${prNumber} is ready for review, adding ready-for-review label`);
+            }
+            
+            try {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: prNumber,
+                labels: [labelToAdd]
+              });
+              console.log(`Successfully added ${labelToAdd} label to PR #${prNumber}`);
+            } catch (error) {
+              console.error(`Error adding label to PR #${prNumber}: ${error.message}`);
+            }
